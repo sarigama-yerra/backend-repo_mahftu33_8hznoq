@@ -12,9 +12,9 @@ Model name is converted to lowercase for the collection name:
 """
 
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Literal
 
-# Example schemas (replace with your own):
+# Example schemas (kept for reference):
 
 class User(BaseModel):
     """
@@ -22,9 +22,9 @@ class User(BaseModel):
     Collection name: "user" (lowercase of class name)
     """
     name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
+    email: Optional[str] = Field(None, description="Email address")
+    avatar: Optional[str] = Field(None, description="Avatar URL")
+    coins: int = Field(100, description="In-game currency balance")
     is_active: bool = Field(True, description="Whether user is active")
 
 class Product(BaseModel):
@@ -38,11 +38,26 @@ class Product(BaseModel):
     category: str = Field(..., description="Product category")
     in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+# Ludo World specific schemas
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Player(BaseModel):
+    name: str
+    color: Literal["red", "green", "blue", "yellow"]
+    # Positions for 4 tokens: -1 means in base, 0..56 on track, 57 means home
+    tokens: List[int] = Field(default_factory=lambda: [-1, -1, -1, -1])
+    is_bot: bool = False
+
+class Room(BaseModel):
+    code: str = Field(..., description="Join code")
+    created_by: str = Field(..., description="Creator player id")
+    status: Literal["waiting", "playing", "finished"] = "waiting"
+    max_players: int = 4
+    players: List[dict] = Field(default_factory=list, description="List of player dicts with _id, name, color, tokens")
+    current_turn: Optional[str] = None  # player_id
+    last_roll: Optional[int] = None
+
+class Message(BaseModel):
+    room_code: str
+    player_id: Optional[str] = None
+    player_name: Optional[str] = None
+    text: str
